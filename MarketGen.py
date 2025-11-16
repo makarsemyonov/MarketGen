@@ -39,6 +39,19 @@ class MarketGen:
 
         return pd.DataFrame(paths, columns=[f"GBM_{i}" for i in range(self.n_paths)])
 
+    def ornstein_uhlenbeck(self, mu: float, theta: float, sigma: float, seed: int = None) -> pd.DataFrame:
+        if seed is not None:
+            np.random.seed(seed)
+
+        X = np.zeros((self.n_steps + 1, self.n_paths))
+        X[0] = self.s0
+
+        for t in range(1, self.n_steps + 1):
+            z = np.random.standard_normal(self.n_paths)
+            X[t] = X[t - 1] + theta * (mu - X[t - 1]) * self.dt + sigma * np.sqrt(self.dt) * z
+
+        return pd.DataFrame(X, columns=[f"OU_{i}" for i in range(self.n_paths)])
+
     @staticmethod
     def plot(df: pd.DataFrame):
         plt.style.use("seaborn-v0_8-pastel")
@@ -79,5 +92,5 @@ class MarketGen:
 
 sim = MarketGen(s0=100, n_steps=252, n_paths=500)
 
-rw = sim.random_walk(mu=0.1, sigma=1.0, seed=42)
-sim.plot(rw)
+ou = sim.ornstein_uhlenbeck(mu=100, theta = 1, sigma=3.0, seed=42)
+sim.plot(ou)
