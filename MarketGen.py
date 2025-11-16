@@ -52,6 +52,23 @@ class MarketGen:
 
         return pd.DataFrame(X, columns=[f"OU_{i}" for i in range(self.n_paths)])
 
+    def jump_diffusion(self, mu: float, sigma: float, lamb: float, mu_j: float, sigma_j: float, seed: int = None) -> pd.DataFrame:
+        if seed is not None:
+            np.random.seed(seed)
+
+        paths = np.zeros((self.n_steps + 1, self.n_paths))
+        paths[0] = self.s0
+
+        for t in range(1, self.n_steps + 1):
+            z = np.random.standard_normal(self.n_paths)
+            jumps = np.random.poisson(lamb * self.dt, self.n_paths)
+            jump_sizes = np.exp(mu_j + sigma_j * np.random.standard_normal(self.n_paths)) - 1
+            paths[t] = paths[t - 1] * np.exp(
+                (mu - 0.5 * sigma**2) * self.dt + sigma * np.sqrt(self.dt) * z
+            ) * (1 + jumps * jump_sizes)
+
+        return pd.DataFrame(paths, columns=[f"JD_{i}" for i in range(self.n_paths)])
+
     @staticmethod
     def plot(df: pd.DataFrame):
         plt.style.use("seaborn-v0_8-pastel")
@@ -92,5 +109,5 @@ class MarketGen:
 
 sim = MarketGen(s0=100, n_steps=252, n_paths=500)
 
-ou = sim.ornstein_uhlenbeck(mu=100, theta = 1, sigma=3.0, seed=42)
+ou = sim.jump_diffusion(mu=0.2, sigma = 0.5, lamb=1.0, mu_j=0, sigma_j=0.1)
 sim.plot(ou)
