@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-class MarketGen:
+class MarketGenerator:
     def __init__(self, s0: float = 100.0, n_steps: int = 252, n_paths: int = 10):
         self.s0 = s0
         self.n_steps = n_steps
