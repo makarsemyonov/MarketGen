@@ -69,6 +69,24 @@ class MarketGen:
 
         return pd.DataFrame(paths, columns=[f"JD_{i}" for i in range(self.n_paths)])
 
+    def heston(self, mu: float, v0: float, kappa: float, theta: float, xi: float, rho: float, seed: int = None) -> pd.DataFrame:
+        if seed is not None:
+            np.random.seed(seed)
+
+        S = np.zeros((self.n_steps + 1, self.n_paths))
+        v = np.zeros((self.n_steps + 1, self.n_paths))
+        S[0], v[0] = self.s0, v0
+
+        for t in range(1, self.n_steps + 1):
+            z1 = np.random.standard_normal(self.n_paths)
+            z2 = np.random.standard_normal(self.n_paths)
+            z2 = rho * z1 + np.sqrt(1 - rho**2) * z2
+
+            v[t] = np.abs(v[t - 1] + kappa * (theta - v[t - 1]) * self.dt + xi * np.sqrt(v[t - 1] * self.dt) * z2)
+            S[t] = S[t - 1] * np.exp((mu - 0.5 * v[t]) * self.dt + np.sqrt(v[t] * self.dt) * z1)
+
+        return pd.DataFrame(S, columns=[f"Heston_{i}" for i in range(self.n_paths)])
+
     @staticmethod
     def plot(df: pd.DataFrame):
         plt.style.use("seaborn-v0_8-pastel")
@@ -105,9 +123,3 @@ class MarketGen:
         plt.tight_layout()
         plt.savefig("market_simulation.png", dpi = 400)
         plt.show()
-
-
-sim = MarketGen(s0=100, n_steps=252, n_paths=500)
-
-ou = sim.jump_diffusion(mu=0.2, sigma = 0.5, lamb=1.0, mu_j=0, sigma_j=0.1)
-sim.plot(ou)
